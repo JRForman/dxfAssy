@@ -1,0 +1,472 @@
+﻿
+If ThisApplication.ActiveDocument.DocumentType <> kAssemblyDocumentObject Then
+MessageBox.Show("Please run this rule from the assembly file.", "iLogic")
+Exit Sub
+End If
+
+Dim oAsmDoc As AssemblyDocument
+oAsmDoc = ThisApplication.ActiveDocument
+'oAsmName = Left(oAsmDoc.DisplayName, Len(oAsmDoc.DisplayName) -4)
+oAsmName = iProperties.Value(oAsmDoc, "Project", "Project")
+
+oPath = ThisDoc.Path
+oDataMedium = ThisApplication.TransientObjects.CreateDataMedium
+oContext = ThisApplication.TransientObjects.CreateTranslationContext
+oContext.Type = IOMechanismEnum.kFileBrowseIOMechanism
+oOptions = ThisApplication.TransientObjects.CreateNameValueMap
+oFolder = oPath & "\" & "DXF"
+If Not System.IO.Directory.Exists(oFolder) Then
+System.IO.Directory.CreateDirectory(oFolder)
+End If
+Dim oRefDocs As DocumentsEnumerator
+oRefDocs = oAsmDoc.AllReferencedDocuments
+Dim oRefDoc As Document
+
+'BOM Stuff
+Dim oBOM As BOM
+oBOM = ThisApplication.ActiveDocument.ComponentDefinition.BOM
+oAssy=ThisApplication.ActiveDocument
+Dim oBOMView As BOMView
+oBOM.PartsOnlyViewEnabled = True   
+oBOM.StructuredViewEnabled = True
+oBOMView = oBOM.BOMViews.Item("Parts Only")
+oBomSView=oBOM.BOMViews.Item("Structured")
+	
+'On Error Goto Exiting
+'Check for operation field
+
+
+Dim oArraylistOps As ArrayList = New ArrayList()
+
+For x = 1 To oBOMView.BOMRows.Count
+  Dim oRow As BOMRow
+  Dim oItemRow As BOMRow
+  oRow = oBOMView.BOMRows(x)
+  Dim oCompDef As ComponentDefinition
+  oPropBOMStructure = oRow.BOMStructure
+  oCompDef = oRow.ComponentDefinitions.Item(1)
+  If oPropBOMStructure = 51973 Then
+  Continue For
+  End If
+  oPart = oCompDef.Document.PropertySets.Item("Design Tracking Properties").Item("Part Number").Value
+  Try
+  oOperation = oCompDef.Document.PropertySets.Item("Inventor User Defined Properties").Item("Operation").Value
+  Catch
+  oOperation = ""
+  End Try
+ 
+
+ 
+ 
+  If oOperation = "" Or oOperation Is Nothing
+  oArraylistOps.add(oPart)
+  End If
+ 
+
+ 
+Next
+
+oMissingOps = String.Join( vbCrLf , oArrayListOps.ToArray())
+If oMissingOps.Length > 0
+'MsgBox ("These parts are missing operations: " & oMissingOps)
+oMissingOpsMessage = MessageBox.Show("These parts are missing operations: " & vbNewLine & oMissingOps & vbNewLine & "Do you wish to add operations now?","Missing Operations", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Exclamation)
+If oMissingOpsMessage = vbNo Then
+
+Else If oMissingOpsMessage = vbYes Then
+Dim oCtrlDef As ControlDefinition
+oCtrlDef = ThisApplication.CommandManager.ControlDefinitions.Item("AssemblyBillOfMaterialsCmd")
+oCtrlDef.Execute
+Exit Sub
+
+Else If oMissingOpsMessage = vbCancel Then
+Exit Sub
+End If
+
+End If
+
+
+
+
+
+
+
+
+'Next
+iLogicVb.RunExternalRule("PartQTY")
+
+i=5
+j=5
+k=5
+l=3
+oDate = Now.ToString("yyyy.MM.dd")
+
+
+Dim oXLSNameWJ As String
+Dim oXLSWJ as String
+oXLSNameWJ = oAsmName & "_" & oDate & "_WJ.pnl"
+oXLSWJ = oPath & "\DXF\" & oAsmName & "_" & oDate & "_WJ.pnl"
+excelAppWJ = CreateObject("Excel.Application")
+excelAppWJ.Visible = False
+excelAppWJ.DisplayAlerts = False
+excelWorkbookWJ = excelAppWJ.Workbooks.Add
+excelWorkbookWJ.SaveAs (oXLSNameWJ, fileformat:=-4158)
+excelAppWJ.Cells(1,1)= "   "
+excelAppWJ.Cells(1,2)= oAsmName & "_" & oDate & "_WJ"
+excelAppWJ.Cells(1,3)= "   "
+excelAppWJ.Cells(1,4)= "I"
+excelAppWJ.Cells(2,1)= "   "
+excelAppWJ.Cells(3,1)= "   "
+excelAppWJ.Cells(4,1)= "   "
+
+Dim oXLSNamePL As String
+Dim oXLSPL As String
+oXLSNamePL = oAsmName & "_" & oDate & "_PL.pnl"
+oXLSPL = oPath & "\DXF\" & oAsmName & "_" & oDate & "_PL.pnl"
+excelAppPL = CreateObject("Excel.Application")
+excelAppPL.Visible = False
+excelAppPL.DisplayAlerts = False
+excelWorkbookPL = excelAppPL.Workbooks.Add
+excelWorkbookPL.SaveAs (oXLSNamePL, fileformat:=-4158)
+excelAppPL.Cells(1,1)= "   "
+excelAppPL.Cells(1,2)= oAsmName & "_" & oDate & "_PL"
+excelAppPL.Cells(1,3)= "   "
+excelAppPL.Cells(1,4)= "I"
+excelAppPL.Cells(2,1)= "   "
+excelAppPL.Cells(3,1)= "   "
+excelAppPL.Cells(4,1)= "   "
+
+
+Dim oXLSNameGAS As String
+Dim oXLSGAS As String
+oXLSNameGAS = oAsmName & "_" & oDate & "_GAS.pnl"
+oXLSGAS = oPath & "\DXF\" & oAsmName & "_" & oDate & "_GAS.pnl"
+excelAppGAS = CreateObject("Excel.Application")
+excelAppGAS.Visible = False
+excelAppGAS.DisplayAlerts = False
+excelWorkbookGAS = excelAppGAS.Workbooks.Add
+excelWorkbookGAS.SaveAs (oXLSNameGAS, fileformat:=-4158)
+excelAppGAS.Cells(1,1)= "   "
+excelAppGAS.Cells(1,2)= oAsmName & "_" & oDate & "_GAS"
+excelAppGAS.Cells(1,3)= "   "
+excelAppGAS.Cells(1,4)= "I"
+excelAppGAS.Cells(2,1)= "   "
+excelAppGAS.Cells(3,1)= "   "
+excelAppGAS.Cells(4,1)= "   "
+
+Dim oNAName As String
+Dim oNA As String
+oNAName = oAsmName & "_" & oDate & "_NotNested.txt"
+oNA = oPath & "\DXF\" & oAsmName & "_" & oDate & "_NotNested.txt"
+excelAppNA = CreateObject("Excel.Application")
+excelAppNA.Visible = True
+excelAppNA.DisplayAlerts = False
+excelWorkbookNA = excelAppNA.Workbooks.Add
+excelWorkbookNA.SaveAs (oNAName, fileformat:=-4158)
+excelAppNA.Cells(1,1)= oAsmName & "_" & oDate & "_NotNested"
+Dim oArraylist As ArrayList = New ArrayList()
+
+									
+
+
+For b = 1 To oBOMView.BOMRows.Count
+  Dim oRow As BOMRow
+  Dim oItemRow As BOMRow
+  oRow = oBOMView.BOMRows(b)
+  Dim oCompDef As ComponentDefinition
+  oPropBOMStructure = oRow.BOMStructure
+  oCompDef = oRow.ComponentDefinitions.Item(1)
+  partDoc = oCompDef.Document
+  Dim iptPathName As String = oCompDef.Document.FullDocumentName
+
+'iptPathName = Left(oRefDoc.FullDocumentName, Len(oRefDoc.FullDocumentName) - 3) & "ipt"
+	
+				
+	If(System.IO.File.Exists(iptPathName)) Then
+'	Dim oDrawDoc As PartDocument
+	
+	'oFileName = Left(oRefDoc.DisplayName, Len(oRefDoc.DisplayName))
+
+
+	
+		Try
+		
+		'oWell = oFileName
+		oQTY = partDoc.PropertySets.Item("Inventor User Defined Properties").Item("PartQTY").Value
+		oMaterial = partDoc.PropertySets.Item("Design Tracking Properties").Item("Material").Value
+		If oMaterial.Contains(Chr(44)) Then oMaterial = ""
+		oThickness = partDoc.PropertySets.Item("Inventor User Defined Properties").Item("Thickness").Value
+		oName = partDoc.PropertySets.Item("Design Tracking Properties").Item("Part Number").Value
+		oOperation = partDoc.PropertySets.Item("Inventor User Defined Properties").Item("Operation").Value
+		oOperation = UCase(oOperation)
+		oDXFName = oAsmName & "_" & partDoc.PropertySets.Item("Design Tracking Properties").Item("Part Number").Value
+		'oDXFName = Left(oFileName, Len(oFileName)-4)
+		Catch
+			
+				
+			oArrayList.add(partDoc.PropertySets.Item("Design Tracking Properties").Item("Part Number").Value)
+			excelAppNA.Cells(1,1)=oNAName
+			excelAppNA.Cells(l,2)= partDoc.PropertySets.Item("Design Tracking Properties").Item("Part Number").Value
+			l=l+1
+			Continue For
+			
+		
+		End Try
+		
+			If oOperation = "PLASMA" Then
+			oOP = "PL"
+			ElseIf oOperation = "PL" Then
+			oOP = "PL"
+			ElseIf oOperation = "WATERJET" Then
+			oOP = "WJ"
+			ElseIf oOperation = "WJ" Then
+			oOP = "WJ"
+			ElseIf oOperation = "GAS" Then
+			oOP = "GAS"
+			'ElseIf oOperation = "SAW" Then
+			'oOP = "SAW"
+
+			Else 
+			'oOP = "NA"
+			Continue For
+			End If
+		
+		'If oOp = "NA" Then 
+		'Continue For
+		'End If
+		
+		partDocOpen = ThisApplication.Documents.Open(iptPathName, True)
+		oDataMedium.FileName = oFolder & "\" & oDXFName & "_" & oThickness & " - " & oMaterial & "(" & oQTY & ")" & "_" & oOP & ".dxf"
+
+		'Dim oCompDefSheetMetal As SheetMetalComponentDefinition
+		'oCompDefSheetMetal = partDoc.ComponentDefinition
+		
+		
+		'If oOP = "NA" Then 
+		'Next
+		'End If
+
+		
+		If oCompDef.HasFlatPattern = False Then
+		oCompDef.Unfold
+		Else
+		oCompDef.FlatPattern.Edit
+		End If
+			
+		If oQTY>0 And oOP IsNot "NA" Then
+		
+		Dim sOut As String
+		sOut = "FLAT PATTERN DXF?AcadVersion=2004&OuterProfileLayerColor=0;255;0&InteriorProfilesLayerColor=0;255;0"
+		oCompDef.DataIO.WriteDataToFile( sOut, oDataMedium.FileName)
+		oCompDef.FlatPattern.ExitEdit
+		End If
+		'Add Excel Data
+			If oOP = "WJ" And oQTY>0 Then
+			
+			excelAppWJ.Cells(i,1)= oDataMedium.FileName 	'A
+			excelAppWJ.Cells(i,2) = "0"					'B
+			excelAppWJ.Cells(i,3) = oQTY					'C
+			excelAppWJ.Cells(i,4) = "0"					'D
+			excelAppWJ.Cells(i,5) = "3"					'E
+			excelAppWJ.Cells(i,6) = "0"					'F
+			excelAppWJ.Cells(i,7) = "0"					'G
+			excelAppWJ.Cells(i,8) = "I"					'H
+			excelAppWJ.Cells(i,9) = "0"					'I
+			excelAppWJ.Cells(i,10) = "0"					'J
+			excelAppWJ.Cells(i,11) = "CADFILE"			'K
+			excelAppWJ.Cells(i,12) = "0"					'L
+			excelAppWJ.Cells(i,13) = "   "				'M
+			excelAppWJ.Cells(i,14) = oDXFName & "_" & oThickness & " - " &  oMaterial & "(" & oQTY & ")_WJ" 'N
+			excelAppWJ.Cells(i,15) = "0"					'O
+			excelAppWJ.Cells(i,16) = oMaterial				'P
+			excelAppWJ.Cells(i,17) = oThickness  			'Q
+			excelAppWJ.Cells(i,18) = "   "				'R
+			excelAppWJ.Cells(i,19) = "   "				'S
+			excelAppWJ.Cells(i,20) = "   "				'T
+			excelAppWJ.Cells(i,21) = "   "				'U
+			excelAppWJ.Cells(i,22) = "0"					'V
+			excelAppWJ.Cells(i,23) = "   "				'W
+			excelAppWJ.Cells(i,24) = "   "				'X
+			excelAppWJ.Cells(i,25) = "   "				'Y
+			excelAppWJ.Cells(i,26) = "   "				'Z
+			excelAppWJ.Cells(i,27) = "0"					'AA
+			excelAppWJ.Cells(i,28) = "0"					'AB
+			excelAppWJ.Cells(i,29) = "   "				'AC
+			
+			i=i+1
+			
+			Else If oOP = "PL" And oQTY>0 Then
+			
+			excelAppPL.Cells(j,1)= oDataMedium.FileName 	'A
+			excelAppPL.Cells(j,2) = "0"					'B
+			excelAppPL.Cells(j,3) = oQTY					'C
+			excelAppPL.Cells(j,4) = "0"					'D
+			excelAppPL.Cells(j,5) = "3"					'E
+			excelAppPL.Cells(j,6) = "0"					'F
+			excelAppPL.Cells(j,7) = "0"					'G
+			excelAppPL.Cells(j,8) = "I"					'H
+			excelAppPL.Cells(j,9) = "0"					'I
+			excelAppPL.Cells(j,10) = "0"					'J
+			excelAppPL.Cells(j,11) = "CADFILE"			'K
+			excelAppPL.Cells(j,12) = "0"					'L
+			excelAppPL.Cells(j,13) = "   "				'M
+			excelAppPL.Cells(j,14) = oDXFName & "_" & oThickness & " - " & oMaterial & "(" & oQTY & ")_PL" 'N
+			excelAppPL.Cells(j,15) = "0"					'O
+			excelAppPL.Cells(j,16) = oMaterial					'P
+			excelAppPL.Cells(j,17) = oThickness  			'Q
+			excelAppPL.Cells(j,18) = "   "				'R
+			excelAppPL.Cells(j,19) = "   "				'S
+			excelAppPL.Cells(j,20) = "   "				'T
+			excelAppPL.Cells(j,21) = "   "				'U
+			excelAppPL.Cells(j,22) = "0"					'V
+			excelAppPL.Cells(j,23) = "   "				'W
+			excelAppPL.Cells(j,24) = "   "				'X
+			excelAppPL.Cells(j,25) = "   "				'Y
+			excelAppPL.Cells(j,26) = "   "				'Z
+			excelAppPL.Cells(j,27) = "0"					'AA
+			excelAppPL.Cells(j,28) = "0"					'AB
+			excelAppPL.Cells(j,29) = "   "				'AC
+			
+			j=j+1
+			
+			Else If oOP = "GAS" And oQTY>0 Then
+			
+			excelAppGAS.Cells(k,1)= oDataMedium.FileName 	'A
+			excelAppGAS.Cells(k,2) = "0"					'B
+			excelAppGAS.Cells(k,3) = oQTY					'C
+			excelAppGAS.Cells(k,4) = "0"					'D
+			excelAppGAS.Cells(k,5) = "3"					'E
+			excelAppGAS.Cells(k,6) = "0"					'F
+			excelAppGAS.Cells(k,7) = "0"					'G
+			excelAppGAS.Cells(k,8) = "I"					'H
+			excelAppGAS.Cells(k,9) = "0"					'I
+			excelAppGAS.Cells(k,10) = "0"					'J
+			excelAppGAS.Cells(k,11) = "CADFILE"			'K
+			excelAppGAS.Cells(k,12) = "0"					'L
+			excelAppGAS.Cells(k,13) = "   "				'M
+			excelAppGAS.Cells(k,14) = oDXFName & "_" & oThickness & " - " & oMaterial & "(" & oQTY & ")_GAS" 'N
+			excelAppGAS.Cells(k,15) = "0"					'O
+			excelAppGAS.Cells(k,16) = oMaterial				'P
+			excelAppGAS.Cells(k,17) = oThickness  			'Q
+			excelAppGAS.Cells(k,18) = "   "				'R
+			excelAppGAS.Cells(k,19) = "   "				'S
+			excelAppGAS.Cells(k,20) = "   "				'T
+			excelAppGAS.Cells(k,21) = "   "				'U
+			excelAppGAS.Cells(k,22) = "0"					'V
+			excelAppGAS.Cells(k,23) = "   "				'W
+			excelAppGAS.Cells(k,24) = "   "				'X
+			excelAppGAS.Cells(k,25) = "   "				'Y
+			excelAppGAS.Cells(k,26) = "   "				'Z
+			excelAppGAS.Cells(k,27) = "0"					'AA
+			excelAppGAS.Cells(k,28) = "0"					'AB
+			excelAppGAS.Cells(k,29) = "   "				'AC
+			
+			k=k+1
+
+			Else 
+			
+			
+			End If
+		
+		
+		' where try used to go
+	
+	partDocOpen.Close
+	
+	Else
+	
+	End If
+
+Next
+
+Exiting:
+
+excelWorkbookWJ.SaveAs (oXLSWJ,)
+excelWorkbookPL.SaveAs (oXLSPL,)
+excelWorkbookGAS.SaveAs (oXLSGAS,)
+excelWorkbookNA.SaveAs (oNA,)
+'Threading.Thread.Sleep(1000)
+
+excelWorkbookWJ.Close
+excelWorkbookPL.Close
+excelWorkbookGAS.Close
+excelWorkbookNA.Close
+excelAppWJ.Quit
+excelAppPL.Quit
+excelAppGAS.Quit
+excelAppNA.Quit
+
+
+If i<6 Then
+My.Computer.FileSystem.DeleteFile(oXLSWJ)
+Else
+End If
+If j<6 Then
+My.Computer.FileSystem.DeleteFile(oXLSPL)
+Else
+End If
+If k<6 Then
+My.Computer.FileSystem.DeleteFile(oXLSGAS)
+Else
+End If
+
+If l<4 Then
+My.Computer.FileSystem.DeleteFile(oNA)
+Else
+oArrayList.Sort()
+mes = String.Join( vbCrLf , oArrayList.ToArray())
+
+MessageBox.Show("The following parts were not added to either" & vbCrLf & "a Plasma, Gas, or Waterjet List."& vbCrLf & vbCrLf & mes, "Parts Without Operation")
+
+End If
+
+
+
+oNesting = MessageBox.Show("Export Complete" & vbNewLine & "Do you want to proceed to Nesting?", "Export", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Exclamation)
+If oNesting = vbYes Then
+
+wjPrefsPath = "R:\Engineering Files\VBA\WJ.prefs "
+plPrefsPath = "R:\Engineering Files\VBA\PL.prefs "
+If i>5 Then
+
+'MessageBox.Show ("Please Select Omax Waterjet", "Waterjet Nest")
+'Try
+'Shell("C:\Program Files (x86)\Hypertherm CAM\ProNest 2015\Pronest.exe " & Chr(34) & oXLSWJ & Chr(34) & Chr(34)  , vbNormalFocus)
+'Catch
+'Shell("C:\Program Files (x86)\Hypertherm CAM\ProNest 2012\Pronest.exe " & Chr(34) & oXLSWJ & Chr(34) & Chr(34)  , vbNormalFocus)
+'End Try
+'Else
+'End If
+
+'MessageBox.Show ("Please Select Omax Waterjet", "Waterjet Nest")
+Try
+Shell("C:\Program Files (x86)\Hypertherm CAM\ProNest 2015\Pronest.exe -prefs " & Chr(34) & wjPrefsPath & Chr(34) & Chr(32) & Chr(34) & oXLSWJ & Chr(34) & Chr(34)  , vbNormalFocus)
+Catch
+Shell("C:\Program Files (x86)\Hypertherm CAM\ProNest 2012\Pronest.exe " & Chr(34) & oXLSWJ & Chr(34) & Chr(34) , vbNormalFocus)
+End Try
+Else
+End If
+
+If j>5
+'MessageBox.Show  ("Please Select HT2000", "Plasma Nest")
+Try
+Shell("C:\Program Files (x86)\Hypertherm CAM\ProNest 2015\Pronest.exe -prefs " & Chr(34) & plPrefsPath & Chr(34) & Chr(32) & Chr(34) & oXLSPL & Chr(34) & Chr(34)  , vbNormalFocus)
+Catch
+Shell("C:\Program Files (x86)\Hypertherm CAM\ProNest 2012\Pronest.exe " & Chr(34) & oXLSPL & Chr(34) & Chr(34)  , vbNormalFocus)
+End Try
+Else
+End If
+
+If k>5
+MessageBox.Show  ("Please Select Burny Oxyfuel", "OXY Nest")
+Try
+Shell("C:\Program Files (x86)\Hypertherm CAM\ProNest 2015\Pronest.exe " & Chr(34) & oXLSGAS & Chr(34) & Chr(34)  , vbNormalFocus)
+Catch
+Shell("C:\Program Files (x86)\Hypertherm CAM\ProNest 2012\Pronest.exe " & Chr(34) & oXLSGAS & Chr(34) & Chr(34)  , vbNormalFocus)
+End Try
+Else
+End If
+
+Else
+Exit Sub
+End If
+
